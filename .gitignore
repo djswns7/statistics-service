@@ -52,6 +52,3 @@ docker-compose.override.yml
 ### Eclipse (if applicable) ###
 .settings/
 
-
-!request/*
-!response/*
