@@ -51,5 +51,7 @@ docker-compose.override.yml
 
 ### Eclipse (if applicable) ###
 .settings/
-.classpath
-.project
+
+
+!com.example.statisticsservice.request/*
+!com.example.statisticsservice.response/*
