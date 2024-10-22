@@ -53,5 +53,5 @@ docker-compose.override.yml
 .settings/
 
 
-!com.example.statisticsservice.request/*
-!com.example.statisticsservice.response/*
+!com/example/statisticsservice/request/*
+!com/example/statisticsservice/response/*
