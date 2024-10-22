@@ -1,0 +1,19 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # 루트 비밀번호
+      MYSQL_DATABASE: ${MYSQL_DATABASE} # 생성할 데이터베이스 이름
+      MYSQL_USER: ${MYSQL_USER} # 생성할 사용자 이름
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD} # 사용자 비밀번호
+    ports:
+      - "9000:3306" # 9000은 다른 응용프로그램과 겹치지 않는 내 로컬 컴퓨터의 포트 : 3306은 MySQL의 default 포트
+    volumes:
+      - mysql_data:/var/lib/mysql # 데이터 지속성
+
+volumes:
+  mysql_data:
+
+# 실행 커맨드
+# docker-compose up -d

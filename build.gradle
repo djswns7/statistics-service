@@ -25,6 +25,11 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+//	mySQL 8.0.31 전후로
+//	mysql:mysql-connector-java => com.mysql:mysql-connector-j
+//	로 의존성 네이밍이 바뀌었음
+	implementation 'com.mysql:mysql-connector-j'
 }
 
 tasks.named('test') {
