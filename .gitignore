@@ -47,7 +47,7 @@ log/
 docker-compose.override.yml
 
 ### Environment variables ###
-.env
+src/main/resources/.env
 
 ### Eclipse (if applicable) ###
 .settings/
