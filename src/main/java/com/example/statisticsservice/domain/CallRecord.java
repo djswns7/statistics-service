@@ -26,7 +26,7 @@ public class CallRecord {
     private int callCount;
 
     @Column(nullable = false)
-    private int callDuration;
+    private int callTime;
 
     private int sttLength;
 
