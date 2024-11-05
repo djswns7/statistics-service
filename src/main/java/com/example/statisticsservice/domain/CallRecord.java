@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+// 인덱싱, 각 데이터 사이즈에 따라 타입 한계값이 대응 가능한지,
 @Entity
-@Table(name = "CallRecord")
+@Table(name = "call_record")
 public class CallRecord {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,16 +23,16 @@ public class CallRecord {
     private String officeName;
 
     @Column(nullable = false)
-    private int callCount;
+    private Long callCount;
 
     @Column(nullable = false)
-    private int callTime;
+    private Long callTime;
 
-    private int sttLength;
+    private Long sttLength;
 
-    private int inputTokens;
+    private Long inputTokens;
 
-    private int outputTokens;
+    private Long outputTokens;
 
     @Column(nullable = false)
     private LocalDate callDate;
@@ -47,5 +47,23 @@ public class CallRecord {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Override
+    public String toString() {
+        return "CallRecord{" +
+                "id=" + id +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", schoolName='" + schoolName + '\'' +
+                ", officeName='" + officeName + '\'' +
+                ", callCount=" + callCount +
+                ", callTime=" + callTime +
+                ", sttLength=" + sttLength +
+                ", inputTokens=" + inputTokens +
+                ", outputTokens=" + outputTokens +
+                ", callDate=" + callDate +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }
 
