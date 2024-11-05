@@ -17,3 +17,4 @@ volumes:
 
 # 실행 커맨드
 # docker-compose up -d
+# mysql -u root -p
