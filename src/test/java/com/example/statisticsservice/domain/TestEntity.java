@@ -4,32 +4,32 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "test_entity")
 public class TestEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
 
-    // Getter for 'name'
-    public String getName() {
-        return name;
-    }
-
-    // Setter for 'name'
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    // Getter for 'id'
+    // Getters and setters
     public Long getId() {
         return id;
     }
 
-    // Setter for 'id' (optional, usually not required for ID)
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
