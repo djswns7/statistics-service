@@ -138,11 +138,10 @@ public class CallRecordController {
         // 추가한 데이터 로드
         Optional<CallRecord> c = callRecordService.getRecordById(333L);
         System.out.println("로드한 데이터: "+c.toString());
-        System.out.println(Arrays.toString(callRecordService.getTopRecordsByCallDuration().getFirst()));
         //추가한 데이터 제거
 
 
-        return "test complete!";
+        return "test fin!";
     }
 
 }
