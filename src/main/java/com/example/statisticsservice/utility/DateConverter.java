@@ -9,7 +9,7 @@ public class DateConverter {
     // String 또는 int를 LocalDate로 변환하는 함수
     // 가능한 input 타입
     //"20241105", "2024-11-05", 20241105
-    public static LocalDate convertToDate(Object input) {
+    public static LocalDate convertToLocalDate(Object input) {
         try {
             if (input instanceof String) {
                 String dateStr = (String) input;
