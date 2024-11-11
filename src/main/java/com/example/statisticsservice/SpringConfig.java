@@ -17,7 +17,7 @@ public class SpringConfig {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("/public/**").permitAll() // 특정 경로에 대한 인증 비활성화
-                                .requestMatchers("/record/**").permitAll() // 레코드 경로 테스트중
+                                .requestMatchers("/call-records/**").permitAll() // 레코드 경로 테스트중
                                 .anyRequest().authenticated() // 나머지 요청은 인증 필요
                 )
                 .formLogin(formlogin -> formlogin.disable()) // 기본 로그인 폼 활성화
