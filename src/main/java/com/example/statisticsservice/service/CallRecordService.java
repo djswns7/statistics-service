@@ -9,9 +9,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Transactional// 개별 트랜잭션 고민할것
 @Service
@@ -24,32 +26,36 @@ public class CallRecordService {
     }
 
     public List<CallTimePerDateRes> getOverallDailyStatistics() {
-        // 일 별 통계 데이터를 계산하여 반환
-        return callRecordRepository.findDailyStatistics();
+        return callRecordRepository.findDailyStatistics().stream()
+                .map(CallTimePerDateRes::new)
+                .collect(Collectors.toList());
     }
 
     public List<CallTimePerWeekRes> getOverallWeeklyStatistics() {
-        // 주 별 통계 데이터를 계산하여 반환
-        return callRecordRepository.findWeeklyStatistics();
+        return callRecordRepository.findWeeklyStatistics().stream()
+                .map(CallTimePerWeekRes::new)
+                .collect(Collectors.toList());
     }
 
     public List<CallTimePerMonthRes> getOverallMonthlyStatistics() {
-        // 월 별 통계 데이터를 계산하여 반환
-        return callRecordRepository.findMonthlyStatistics();
+        return callRecordRepository.findMonthlyStatistics().stream()
+                .map(CallTimePerMonthRes::new)
+                .collect(Collectors.toList());
     }
 
     public List<CallTimePerDateRes> getOverallPeriodStatistics(LocalDate startDate, LocalDate endDate) {
-        // 특정 기간 통계 데이터를 계산하여 반환
-        return callRecordRepository.findByDateRange(startDate, endDate);
+        return callRecordRepository.findAllByCallDateBetween(startDate, endDate).stream()
+                .map(CallTimePerDateRes::new)
+                .collect(Collectors.toList());
     }
 
 
 
-    public List<Object[]> getTopRecordsByCallCount() {
+    public List<CallRecord> getTopRecordsByCallCount() {
         return callRecordRepository.findTopByCallCount();
     }
 
-    public List<Object[]> getTopRecordsByCallDuration() {
+    public List<CallRecord> getTopRecordsByCallDuration() {
         return callRecordRepository.findTopByCallTime();
     }
 

@@ -23,9 +23,24 @@
 //}
 package com.example.statisticsservice.response;
 
+import com.example.statisticsservice.domain.CallRecord;
+
 // week는 0~52의 정수형태 단위(Ex. 2월 첫째 주 의 경우 5 로 표기)
 // 인터페이스 기반 DTO 프로젝션
-public interface CallTimePerWeekRes {
-    Long getCallTime();
-    Integer getWeek();
+public class CallTimePerWeekRes {
+    private Long callTime;
+    private Integer week;
+
+    public CallTimePerWeekRes(CallRecord callRecord) {
+        this.callTime = callRecord.getCallTime().longValue();
+        this.week = callRecord.getWeek();
+    }
+
+    public Long getCallTime() {
+        return callTime;
+    }
+
+    public Integer getWeek() {
+        return week;
+    }
 }
