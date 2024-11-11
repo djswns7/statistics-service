@@ -2,6 +2,9 @@ package com.example.statisticsservice.service;
 
 import com.example.statisticsservice.domain.CallRecord;
 import com.example.statisticsservice.repository.CallRecordRepository;
+import com.example.statisticsservice.response.CallTimePerDateRes;
+import com.example.statisticsservice.response.CallTimePerMonthRes;
+import com.example.statisticsservice.response.CallTimePerWeekRes;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -20,28 +23,27 @@ public class CallRecordService {
         this.callRecordRepository = callRecordRepository;
     }
 
-    public List<CallRecord> getRecordsByDateRange(LocalDate startDate, LocalDate endDate) {
+    public List<CallTimePerDateRes> getOverallDailyStatistics() {
+        // 일 별 통계 데이터를 계산하여 반환
+        return callRecordRepository.findDailyStatistics();
+    }
+
+    public List<CallTimePerWeekRes> getOverallWeeklyStatistics() {
+        // 주 별 통계 데이터를 계산하여 반환
+        return callRecordRepository.findWeeklyStatistics();
+    }
+
+    public List<CallTimePerMonthRes> getOverallMonthlyStatistics() {
+        // 월 별 통계 데이터를 계산하여 반환
+        return callRecordRepository.findMonthlyStatistics();
+    }
+
+    public List<CallTimePerDateRes> getOverallPeriodStatistics(LocalDate startDate, LocalDate endDate) {
+        // 특정 기간 통계 데이터를 계산하여 반환
         return callRecordRepository.findByDateRange(startDate, endDate);
     }
 
-    public List<CallRecord> getRecordsByPhoneNumberAndDateRange(String phoneNumber, LocalDate startDate, LocalDate endDate) {
-        return callRecordRepository.findByPhoneNumberAndDateRange(phoneNumber, startDate, endDate);
-    }
 
-    public List<CallRecord> getDailyRecords(LocalDate date) {
-        return callRecordRepository.findByDateRange(date, date);
-    }
-
-    public List<CallRecord> getWeeklyRecords(LocalDate startDate) {
-        LocalDate endDate = startDate.plusDays(6);
-        return callRecordRepository.findByDateRange(startDate, endDate);
-    }
-
-    public List<CallRecord> getMonthlyRecords(LocalDate month) {
-        LocalDate startDate = month.with(TemporalAdjusters.firstDayOfMonth());
-        LocalDate endDate = month.with(TemporalAdjusters.lastDayOfMonth());
-        return callRecordRepository.findByDateRange(startDate, endDate);
-    }
 
     public List<Object[]> getTopRecordsByCallCount() {
         return callRecordRepository.findTopByCallCount();

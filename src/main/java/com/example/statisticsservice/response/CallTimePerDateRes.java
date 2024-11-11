@@ -2,5 +2,7 @@ package com.example.statisticsservice.response;
 
 import java.time.LocalDate;
 
-public record CallTimePerDateRes(Long callTime, LocalDate date) {
+public interface CallTimePerDateRes {
+    Long getCallTime();
+    LocalDate getCallDate();
 }
