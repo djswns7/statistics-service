@@ -1,15 +1,17 @@
 package com.example.statisticsservice.service;
 
-import com.example.statisticsservice.domain.CallRecord;
 import com.example.statisticsservice.repository.CallRecordRepository;
 import com.example.statisticsservice.response.*;
+import com.example.statisticsservice.response.CallCountPerDateRes;
+import com.example.statisticsservice.response.CallCountPerMonthRes;
+import com.example.statisticsservice.response.CallCountPerWeekRes;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Transactional// 개별 트랜잭션 고민할것
@@ -105,6 +107,36 @@ public class CallRecordService {
                 .collect(Collectors.toList());
     }
 
+    public List<CallCountPerDateRes> getDailyCallCountBySchool(String schoolName) {
+        return callRecordRepository.findDailyCallCountBySchool(schoolName)
+                .stream()
+                .map(projection -> new CallCountPerDateRes(projection.getCallCount(), projection.getCallDate()))
+                .collect(Collectors.toList());
+    }
+
+    public List<CallCountPerWeekRes> getWeeklyCallCountBySchool(String schoolName) {
+        return callRecordRepository.findWeeklyCallCountBySchool(schoolName)
+                .stream()
+                .map(projection -> new CallCountPerWeekRes(projection.getCallCount(), projection.getWeek()))
+                .collect(Collectors.toList());
+    }
+
+    public List<CallCountPerMonthRes> getMonthlyCallCountBySchool(String schoolName) {
+        return callRecordRepository.findMonthlyCallCountBySchool(schoolName)
+                .stream()
+                .map(projection -> new CallCountPerMonthRes(projection.getCallCount(), projection.getMonth()))
+                .collect(Collectors.toList());
+    }
+
+    public List<CallCountPerDateRes> getPeriodCallCountBySchool(String startDate, String endDate, String schoolName) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+        return callRecordRepository.findBySchoolNameAndCallDateBetween(schoolName, start, end)
+                .stream()
+                .map(callRecord -> new CallCountPerDateRes(callRecord.getCallCount(), callRecord.getCallDate()))
+                .collect(Collectors.toList());
+    }
+
     // 전화번호 필터
     public List<CallTimePerDateRes> getOverallDailyCallTimeByPhone(String phoneNumber) {
         System.out.println(phoneNumber);
@@ -133,37 +165,64 @@ public class CallRecordService {
                 .collect(Collectors.toList());
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public List<CallRecord> getTopRecordsByCallCount() {
-        return callRecordRepository.findTopByCallCount();
+    // PhoneNumber 기반 메서드도 동일하게 적용
+    public List<CallCountPerDateRes> getDailyCallCountByPhone(String phoneNumber) {
+        return callRecordRepository.findDailyCallCountByPhone(phoneNumber)
+                .stream()
+                .map(projection -> new CallCountPerDateRes(projection.getCallCount(), projection.getCallDate()))
+                .collect(Collectors.toList());
     }
 
-    public List<CallRecord> getTopRecordsByCallDuration() {
-        return callRecordRepository.findTopByCallTime();
+    public List<CallCountPerWeekRes> getWeeklyCallCountByPhone(String phoneNumber) {
+        return callRecordRepository.findWeeklyCallCountByPhone(phoneNumber)
+                .stream()
+                .map(projection -> new CallCountPerWeekRes(projection.getCallCount(), projection.getWeek()))
+                .collect(Collectors.toList());
     }
 
-    public Optional<CallRecord> getRecordById(Long id) {
-
-        return callRecordRepository.findById(id);
+    public List<CallCountPerMonthRes> getMonthlyCallCountByPhone(String phoneNumber) {
+        return callRecordRepository.findMonthlyCallCountByPhone(phoneNumber)
+                .stream()
+                .map(projection -> new CallCountPerMonthRes(projection.getCallCount(), projection.getMonth()))
+                .collect(Collectors.toList());
     }
+
+    public List<CallCountPerDateRes> getPeriodCallCountByPhone(String startDate, String endDate, String phoneNumber) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+        return callRecordRepository.findByPhoneNumberAndCallDateBetween(phoneNumber, start, end)
+                .stream()
+                .map(callRecord -> new CallCountPerDateRes(callRecord.getCallCount(), callRecord.getCallDate()))
+                .collect(Collectors.toList());
+    }
+
+
+    public List<CallTimePerSchoolRes> getCallTimeBySchool(String order) {
+        Sort sort = Sort.by(order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, "callTime");
+        return callRecordRepository.findCallTimeBySchool(sort);
+    }
+
+    public List<CallCountPerSchoolRes> getCallCountBySchool(String order) {
+        Sort sort = Sort.by(order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, "callCount");
+        return callRecordRepository.findCallCountBySchool(sort);
+    }
+
+    public List<CallTimePerPhoneNumRes> getCallTimeByPhoneNum(String order) {
+        Sort sort = Sort.by(order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, "callTime");
+        return callRecordRepository.findCallTimeByPhoneNum(sort);
+    }
+
+    public List<CallCountPerPhoneNumRes> getCallCountByPhoneNum(String order) {
+        Sort sort = Sort.by(order.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, "callCount");
+        return callRecordRepository.findCallCountByPhoneNum(sort);
+    }
+
+
+
+
+
+
+
 
 /*
     public void createRecord(RecordReq req){

@@ -1,15 +1,18 @@
 package com.example.statisticsservice.controller;
 
-import com.example.statisticsservice.domain.CallRecord;
 import com.example.statisticsservice.request.PhoneNumReq;
 import com.example.statisticsservice.response.*;
+import com.example.statisticsservice.response.CallCountPerDateRes;
+import com.example.statisticsservice.response.CallCountPerMonthRes;
+import com.example.statisticsservice.response.CallCountPerWeekRes;
 import com.example.statisticsservice.service.CallRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+
+import static com.example.statisticsservice.utility.ParameterValidator.validateOrderParameter;
 
 @RestController
 @RequestMapping("/call-records")
@@ -29,7 +32,7 @@ public class CallRecordController {
 
     }
 
-    // 전체 통계 데이터 조회
+    // 전체 통계 데이터 call-time 조회
     @GetMapping("/overall-call-time/daily")
     public List<CallTimePerDateRes> getOverallDailyCallTime() {
         return callRecordService.getOverallDailyCallTime();
@@ -52,7 +55,7 @@ public class CallRecordController {
         return callRecordService.getOverallPeriodCallTime(startDate, endDate);
     }
 
-        // count
+    // 전체 통계 데이터 call-count 조회
     @GetMapping("/overall-call-counts/daily")
     public List<CallCountPerDateRes> getOverallDailyCallCount() {
         return callRecordService.getOverallDailyCallCount();
@@ -75,7 +78,7 @@ public class CallRecordController {
         return callRecordService.getOverallPeriodCallCount(startDate, endDate);
     }
 
-    // 학교 이름 필터
+    // 학교 이름 별 call-time 조회
     @GetMapping("/overall-call-time/school/daily")
     public List<CallTimePerDateRes> getOverallDailyCallTimeBySchool(
             @RequestParam(value = "schoolName")String schoolName
@@ -105,7 +108,33 @@ public class CallRecordController {
         return callRecordService.getOverallPeriodCallTimeBySchool(startDate, endDate, schoolName);
     }
 
-    // 전화번호 필터
+    // 학교 이름 별 call-count 조회
+    @GetMapping("/school/daily")
+    public List<CallCountPerDateRes> getDailyCallCountBySchool(@RequestParam(value = "schoolName") String schoolName) {
+        return callRecordService.getDailyCallCountBySchool(schoolName);
+    }
+
+    @GetMapping("/school/weekly")
+    public List<CallCountPerWeekRes> getWeeklyCallCountBySchool(@RequestParam(value = "schoolName") String schoolName) {
+        return callRecordService.getWeeklyCallCountBySchool(schoolName);
+    }
+
+    @GetMapping("/school/monthly")
+    public List<CallCountPerMonthRes> getMonthlyCallCountBySchool(@RequestParam(value = "schoolName") String schoolName) {
+        return callRecordService.getMonthlyCallCountBySchool(schoolName);
+    }
+
+    @GetMapping("/school/period")
+    public List<CallCountPerDateRes> getPeriodCallCountBySchool(
+            @RequestParam(value = "startDate") String startDate,
+            @RequestParam(value = "endDate") String endDate,
+            @RequestParam(value = "schoolName") String schoolName) {
+        return callRecordService.getPeriodCallCountBySchool(startDate, endDate, schoolName);
+    }
+
+
+
+    // 전화번호 별 call-time 조회
     @GetMapping("/overall-call-time/phone/daily")
     public List<CallTimePerDateRes> getOverallDailyCallTimeByPhone(
             @RequestBody PhoneNumReq phoneNumReq
@@ -143,15 +172,56 @@ public class CallRecordController {
         return callRecordService.getOverallPeriodCallTimeByPhone(startDate, endDate, phoneNumReq.getPhoneNumber());
     }
 
+    // 전화번호 별 call-count 조회
+    @GetMapping("/phone/daily")
+    public List<CallCountPerDateRes> getDailyCallCountByPhone(@RequestBody PhoneNumReq phoneNumReq) {
+        return callRecordService.getDailyCallCountByPhone(phoneNumReq.getPhoneNumber().trim());
+    }
 
+    @GetMapping("/phone/weekly")
+    public List<CallCountPerWeekRes> getWeeklyCallCountByPhone(@RequestBody PhoneNumReq phoneNumReq) {
+        return callRecordService.getWeeklyCallCountByPhone(phoneNumReq.getPhoneNumber());
+    }
 
+    @GetMapping("/phone/monthly")
+    public List<CallCountPerMonthRes> getMonthlyCallCountByPhone(@RequestBody PhoneNumReq phoneNumReq) {
+        return callRecordService.getMonthlyCallCountByPhone(phoneNumReq.getPhoneNumber());
+    }
 
-//    @GetMapping("/statistics/phone/top")
-//    public List<PhoneStatisticsResponse> getTopPhoneStatistics(@RequestParam(defaultValue = "callVolume") String sortBy,
-//                                                               @RequestParam(defaultValue = "0") int page,
-//                                                               @RequestParam(defaultValue = "10") int size) {
-//        return callRecordService.getTopPhoneStatistics(sortBy, page, size);
-//    }
+    @GetMapping("/phone/period")
+    public List<CallCountPerDateRes> getPeriodCallCountByPhone(
+            @RequestParam(value = "startDate") String startDate,
+            @RequestParam(value = "endDate") String endDate,
+            @RequestBody PhoneNumReq phoneNumReq) {
+        return callRecordService.getPeriodCallCountByPhone(startDate, endDate, phoneNumReq.getPhoneNumber());
+    }
+
+    // 학교 또는 번호 별 가장 많은 통화량 또는 통화 횟수 별 정렬 값 반환
+    // order 값은 asc 또는 desc(기본값)
+    @GetMapping("/school/call-time")
+    public List<CallTimePerSchoolRes> getCallTimeBySchool(@RequestParam(name = "order", defaultValue = "desc") String order) {
+        validateOrderParameter(order);
+        return callRecordService.getCallTimeBySchool(order);
+    }
+
+    @GetMapping("/school/call-count")
+    public List<CallCountPerSchoolRes> getCallCountBySchool(@RequestParam(name = "order", defaultValue = "desc") String order) {
+        validateOrderParameter(order);
+        return callRecordService.getCallCountBySchool(order);
+    }
+
+    @GetMapping("/phone/call-time")
+    public List<CallTimePerPhoneNumRes> getCallTimeByPhoneNum(@RequestParam(name = "order", defaultValue = "desc") String order) {
+        validateOrderParameter(order);
+        return callRecordService.getCallTimeByPhoneNum(order);
+    }
+
+    @GetMapping("/phone/call-count")
+    public List<CallCountPerPhoneNumRes> getCallCountByPhoneNum(@RequestParam(name = "order", defaultValue = "desc") String order) {
+        validateOrderParameter(order);
+        return callRecordService.getCallCountByPhoneNum(order);
+    }
+
 
 
     /*
@@ -172,8 +242,8 @@ public class CallRecordController {
         // data 추가
         
         // 추가한 데이터 로드
-        Optional<CallRecord> c = callRecordService.getRecordById(333L);
-        System.out.println("로드한 데이터: "+c.toString());
+
+
         //추가한 데이터 제거
 
 

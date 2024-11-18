@@ -1,6 +1,8 @@
 package com.example.statisticsservice.repository;
 
 import com.example.statisticsservice.domain.CallRecord;
+import com.example.statisticsservice.response.*;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -575,20 +577,70 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
     List<CallRecord> findPeriodCallTimeByPhone(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, @Param("phoneNumber") String phoneNumber);
 
 
+    // 일별 집계 쿼리
+    @Query("SELECT COUNT(c) as callCount, c.callDate as callDate " +
+            "FROM CallRecord c " +
+            "WHERE c.schoolName = :schoolName " +
+            "GROUP BY c.callDate " +
+            "ORDER BY c.callDate")
+    List<CallCountPerDateProjection> findDailyCallCountBySchool(@Param("schoolName") String schoolName);
+
+    // 주별 집계 쿼리
+    @Query("SELECT COUNT(c) as callCount, FUNCTION('WEEK', c.callDate) as week " +
+            "FROM CallRecord c " +
+            "WHERE c.schoolName = :schoolName " +
+            "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate) " +
+            "ORDER BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate)")
+    List<CallCountPerWeekProjection> findWeeklyCallCountBySchool(@Param("schoolName") String schoolName);
+
+    // 월별 집계 쿼리
+    @Query("SELECT COUNT(c) as callCount, FUNCTION('MONTH', c.callDate) as month " +
+            "FROM CallRecord c " +
+            "WHERE c.schoolName = :schoolName " +
+            "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('MONTH', c.callDate) " +
+            "ORDER BY FUNCTION('YEAR', c.callDate), FUNCTION('MONTH', c.callDate)")
+    List<CallCountPerMonthProjection> findMonthlyCallCountBySchool(@Param("schoolName") String schoolName);
+
+    // 전화번호 기반 일별 집계 쿼리
+    @Query("SELECT COUNT(c) as callCount, c.callDate as callDate " +
+            "FROM CallRecord c " +
+            "WHERE c.phoneNumber = :phoneNumber " +
+            "GROUP BY c.callDate " +
+            "ORDER BY c.callDate")
+    List<CallCountPerDateProjection> findDailyCallCountByPhone(@Param("phoneNumber") String phoneNumber);
+
+    // 전화번호 기반 주별 집계 쿼리
+    @Query("SELECT COUNT(c) as callCount, FUNCTION('WEEK', c.callDate) as week " +
+            "FROM CallRecord c " +
+            "WHERE c.phoneNumber = :phoneNumber " +
+            "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate) " +
+            "ORDER BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate)")
+    List<CallCountPerWeekProjection> findWeeklyCallCountByPhone(@Param("phoneNumber") String phoneNumber);
+
+    // 전화번호 기반 월별 집계 쿼리
+    @Query("SELECT COUNT(c) as callCount, FUNCTION('MONTH', c.callDate) as month " +
+            "FROM CallRecord c " +
+            "WHERE c.phoneNumber = :phoneNumber " +
+            "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('MONTH', c.callDate) " +
+            "ORDER BY FUNCTION('YEAR', c.callDate), FUNCTION('MONTH', c.callDate)")
+    List<CallCountPerMonthProjection> findMonthlyCallCountByPhone(@Param("phoneNumber") String phoneNumber);
+
+    List<CallRecord> findBySchoolNameAndCallDateBetween(String schoolName, LocalDate startDate, LocalDate endDate);
+
+    List<CallRecord> findByPhoneNumberAndCallDateBetween(String phoneNumber, LocalDate startDate, LocalDate endDate);
 
 
+    @Query("SELECT SUM(c.callTime) as callTime, c.schoolName as schoolName FROM CallRecord c GROUP BY c.schoolName")
+    List<CallTimePerSchoolRes> findCallTimeBySchool(Sort sort);
 
-    @Query("SELECT c FROM CallRecord c WHERE c.phoneNumber = :phoneNumber AND c.callDate BETWEEN :startDate AND :endDate")
-    List<CallRecord> findByPhoneNumberAndDateRange(@Param("phoneNumber") String phoneNumber, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    @Query("SELECT COUNT(c) as callCount, c.schoolName as schoolName FROM CallRecord c GROUP BY c.schoolName")
+    List<CallCountPerSchoolRes> findCallCountBySchool(Sort sort);
 
-    @Query("SELECT c.phoneNumber, " +
-            "SUM(c.callCount) as totalCount, SUM(c.callTime) as totalTime " +
-            "FROM CallRecord c GROUP BY c.phoneNumber ORDER BY totalCount DESC")
-    List<CallRecord> findTopByCallCount();
+    @Query("SELECT SUM(c.callTime) as callTime, c.phoneNumber as phoneNum FROM CallRecord c GROUP BY c.phoneNumber")
+    List<CallTimePerPhoneNumRes> findCallTimeByPhoneNum(Sort sort);
 
-    @Query("SELECT c.phoneNumber, " +
-            "SUM(c.callCount) as totalCount, SUM(c.callTime) as totalTime " +
-            "FROM CallRecord c GROUP BY c.phoneNumber ORDER BY totalTime DESC")
-    List<CallRecord> findTopByCallTime();
+    @Query("SELECT COUNT(c) as callCount, c.phoneNumber as phoneNum FROM CallRecord c GROUP BY c.phoneNumber")
+    List<CallCountPerPhoneNumRes> findCallCountByPhoneNum(Sort sort);
+
 }
 
