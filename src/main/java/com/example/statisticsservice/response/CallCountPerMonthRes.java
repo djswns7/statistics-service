@@ -11,6 +11,11 @@ public class CallCountPerMonthRes {
         this.month = callRecord.getMonth();
     }
 
+    public CallCountPerMonthRes(Integer callCount, Integer month) {
+        this.callCount = callCount;
+        this.month = month;
+    }
+
     public Integer getCallCount() {
         return callCount;
     }

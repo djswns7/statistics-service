@@ -14,6 +14,11 @@ public class CallCountPerDateRes {
         this.callDate = callRecord.getCallDate();
     }
 
+    public CallCountPerDateRes(Integer callCount, LocalDate callDate) {
+        this.callCount = callCount;
+        this.callDate = callDate;
+    }
+
     public Integer getCallCount() {
         return callCount;
     }
