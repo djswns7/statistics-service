@@ -7,6 +7,9 @@ import com.example.statisticsservice.response.CallCountPerMonthRes;
 import com.example.statisticsservice.response.CallCountPerWeekRes;
 import com.example.statisticsservice.service.CallRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -33,26 +36,34 @@ public class CallRecordController {
     }
 
     // 전체 통계 데이터 call-time 조회
+    // Pageable 클래스 사용시 RequestParameter 에 page, size 값을 넘겨줄 수 있음
     @GetMapping("/call-time/daily")
-    public List<CallTimePerDateRes> getOverallDailyCallTime() {
-        return callRecordService.getOverallDailyCallTime();
+    public Page<CallTimePerDateRes> getOverallDailyCallTime(Pageable pageable) {
+        return callRecordService.getOverallDailyCallTime(pageable);
     }
 
+    // 다음 방식처럼 직접 Pageable 객체를 생성하는 방식도 존재
     @GetMapping("/call-time/weekly")
-    public List<CallTimePerWeekRes> getOverallWeeklyCallTime() {
-        return callRecordService.getOverallWeeklyCallTime();
+    public Page<CallTimePerWeekRes> getOverallWeeklyCallTime(
+            @RequestParam(name="page", defaultValue = "0") int page,
+            @RequestParam(name="size", defaultValue = "10") int size
+    ) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        return callRecordService.getOverallWeeklyCallTime(pageable);
     }
 
     @GetMapping("/call-time/monthly")
-    public List<CallTimePerMonthRes> getOverallMonthlyCallTime() {
-        return callRecordService.getOverallMonthlyCallTime();
+    public Page<CallTimePerMonthRes> getOverallMonthlyCallTime(Pageable pageable) {
+        return callRecordService.getOverallMonthlyCallTime(pageable);
     }
 
     @GetMapping("/call-time/period")
-    public List<CallTimePerDateRes> getOverallPeriodCallTime(
-            @RequestParam(value = "startDate") String startDate,
-            @RequestParam(value = "endDate") String endDate) {
-        return callRecordService.getOverallPeriodCallTime(startDate, endDate);
+    public Page<CallTimePerDateRes> getOverallPeriodCallTime(
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate,
+            Pageable pageable) {
+        return callRecordService.getOverallPeriodCallTime(startDate, endDate, pageable);
     }
 
     // 전체 통계 데이터 call-count 조회
@@ -71,70 +82,72 @@ public class CallRecordController {
         return callRecordService.getOverallMonthlyCallCount();
     }
 
+    // swagger ui 테스트시 전체범위설정하면 오류남(부하 때문인듯?)
+    // 많은 값 불러올 시에는 postman으로 테스트할것
     @GetMapping("/call-counts/period")
     public List<CallCountPerDateRes> getOverallPeriodCallCount(
-            @RequestParam(value = "startDate") String startDate,
-            @RequestParam(value = "endDate") String endDate) {
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate) {
         return callRecordService.getOverallPeriodCallCount(startDate, endDate);
     }
 
     // 학교 이름 별 call-time 조회
     @GetMapping("/schools/{school-name}/call-time/daily")
     public List<CallTimePerDateRes> getOverallDailyCallTimeBySchool(
-            @PathVariable(value = "school-name") String schoolName
+            @PathVariable(name = "school-name") String schoolName
     ) {
         return callRecordService.getOverallDailyCallTimeBySchool(schoolName);
     }
 
     @GetMapping("/schools/{school-name}/call-time/weekly")
     public List<CallTimePerWeekRes> getOverallWeeklyCallTimeBySchool(
-            @PathVariable(value = "school-name") String schoolName
+            @PathVariable(name = "school-name") String schoolName
     ) {
         return callRecordService.getOverallWeeklyCallTimeBySchool(schoolName);
     }
 
     @GetMapping("/schools/{school-name}/call-time/monthly")
     public List<CallTimePerMonthRes> getOverallMonthlyCallTimeBySchool(
-            @PathVariable(value = "school-name") String schoolName
+            @PathVariable(name = "school-name") String schoolName
     ) {
         return callRecordService.getOverallMonthlyCallTimeBySchool(schoolName);
     }
 
     @GetMapping("/schools/{school-name}/call-time/period")
     public List<CallTimePerDateRes> getOverallPeriodCallTimeBySchool(
-            @RequestParam(value = "startDate") String startDate,
-            @RequestParam(value = "endDate") String endDate,
-            @PathVariable(value = "school-name") String schoolName) {
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate,
+            @PathVariable(name = "school-name") String schoolName) {
         return callRecordService.getOverallPeriodCallTimeBySchool(startDate, endDate, schoolName);
     }
 
     // 학교 이름 별 call-count 조회
     @GetMapping("/schools/{school-name}/call-counts/daily")
     public List<CallCountPerDateRes> getDailyCallCountBySchool(
-            @PathVariable(value = "school-name") String schoolName
+            @PathVariable(name = "school-name") String schoolName
     ) {
         return callRecordService.getDailyCallCountBySchool(schoolName);
     }
 
     @GetMapping("/schools/{school-name}/call-counts/weekly")
     public List<CallCountPerWeekRes> getWeeklyCallCountBySchool(
-            @PathVariable(value = "school-name") String schoolName
+            @PathVariable(name = "school-name") String schoolName
     ) {
         return callRecordService.getWeeklyCallCountBySchool(schoolName);
     }
 
     @GetMapping("/schools/{school-name}/call-counts/monthly")
     public List<CallCountPerMonthRes> getMonthlyCallCountBySchool(
-            @PathVariable(value = "school-name") String schoolName
+            @PathVariable(name = "school-name") String schoolName
     ) {
         return callRecordService.getMonthlyCallCountBySchool(schoolName);
     }
 
     @GetMapping("/schools/{school-name}/call-counts/period")
     public List<CallCountPerDateRes> getPeriodCallCountBySchool(
-            @RequestParam(value = "startDate") String startDate,
-            @RequestParam(value = "endDate") String endDate,
-            @PathVariable(value = "school-name") String schoolName) {
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate,
+            @PathVariable(name = "school-name") String schoolName) {
         return callRecordService.getPeriodCallCountBySchool(startDate, endDate, schoolName);
     }
 
@@ -160,63 +173,63 @@ public class CallRecordController {
     // 전화번호 별 call-time 조회
     @GetMapping("/phones/call-time/daily")
     public List<CallTimePerDateRes> getOverallDailyCallTimeByPhone(
-            @RequestBody PhoneNumReq phoneNumReq
+            @RequestParam(name = "phoneNumber") String phoneNumber
             ) {
-        return callRecordService.getOverallDailyCallTimeByPhone(phoneNumReq.getPhoneNumber().trim());
+        return callRecordService.getOverallDailyCallTimeByPhone(phoneNumber);
     }
 
 //    @GetMapping("/overall-call-time/phone/daily")
 //    public List<CallTimePerDateRes> getOverallDailyCallTimeByPhone(
-//            @RequestParam(value = "phoneNumber") String phoneNumber
+//            @RequestParam(name = "phoneNumber") String phoneNumber
 //    ) {
 //        return callRecordService.getOverallDailyCallTimeByPhone(phoneNumber);
 //    }
 
     @GetMapping("/phones/call-time/weekly")
     public List<CallTimePerWeekRes> getOverallWeeklyCallTimeByPhone(
-            @RequestBody PhoneNumReq phoneNumReq
+            @RequestParam(name = "phoneNumber") String phoneNumber
     ) {
-        return callRecordService.getOverallWeeklyCallTimeByPhone(phoneNumReq.getPhoneNumber());
+        return callRecordService.getOverallWeeklyCallTimeByPhone(phoneNumber);
     }
 
     @GetMapping("/phones/call-time/monthly")
     public List<CallTimePerMonthRes> getOverallMonthlyCallTimeByPhone(
-            @RequestBody PhoneNumReq phoneNumReq
+            @RequestParam(name = "phoneNumber") String phoneNumber
     ) {
-        return callRecordService.getOverallMonthlyCallTimeByPhone(phoneNumReq.getPhoneNumber());
+        return callRecordService.getOverallMonthlyCallTimeByPhone(phoneNumber);
     }
 
     @GetMapping("/phones/call-time/period")
     public List<CallTimePerDateRes> getOverallPeriodCallTimeByPhone(
-            @RequestParam(value = "startDate") String startDate,
-            @RequestParam(value = "endDate") String endDate,
-            @RequestBody PhoneNumReq phoneNumReq
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate,
+            @RequestParam(name = "phoneNumber") String phoneNumber
     ) {
-        return callRecordService.getOverallPeriodCallTimeByPhone(startDate, endDate, phoneNumReq.getPhoneNumber());
+        return callRecordService.getOverallPeriodCallTimeByPhone(startDate, endDate, phoneNumber);
     }
 
     // 전화번호 별 call-count 조회
     @GetMapping("/phones/call-counts/daily")
-    public List<CallCountPerDateRes> getDailyCallCountByPhone(@RequestBody PhoneNumReq phoneNumReq) {
-        return callRecordService.getDailyCallCountByPhone(phoneNumReq.getPhoneNumber().trim());
+    public List<CallCountPerDateRes> getDailyCallCountByPhone(@RequestParam(name = "phoneNumber") String phoneNumber) {
+        return callRecordService.getDailyCallCountByPhone(phoneNumber);
     }
 
     @GetMapping("/phones/call-counts/weekly")
-    public List<CallCountPerWeekRes> getWeeklyCallCountByPhone(@RequestBody PhoneNumReq phoneNumReq) {
-        return callRecordService.getWeeklyCallCountByPhone(phoneNumReq.getPhoneNumber());
+    public List<CallCountPerWeekRes> getWeeklyCallCountByPhone(@RequestParam(name = "phoneNumber") String phoneNumber) {
+        return callRecordService.getWeeklyCallCountByPhone(phoneNumber);
     }
 
     @GetMapping("/phones/call-counts/monthly")
-    public List<CallCountPerMonthRes> getMonthlyCallCountByPhone(@RequestBody PhoneNumReq phoneNumReq) {
-        return callRecordService.getMonthlyCallCountByPhone(phoneNumReq.getPhoneNumber());
+    public List<CallCountPerMonthRes> getMonthlyCallCountByPhone(@RequestParam(name = "phoneNumber") String phoneNumber) {
+        return callRecordService.getMonthlyCallCountByPhone(phoneNumber);
     }
 
     @GetMapping("/phones/call-counts/period")
     public List<CallCountPerDateRes> getPeriodCallCountByPhone(
-            @RequestParam(value = "startDate") String startDate,
-            @RequestParam(value = "endDate") String endDate,
-            @RequestBody PhoneNumReq phoneNumReq) {
-        return callRecordService.getPeriodCallCountByPhone(startDate, endDate, phoneNumReq.getPhoneNumber());
+            @RequestParam(name = "startDate") String startDate,
+            @RequestParam(name = "endDate") String endDate,
+            @RequestParam(name = "phoneNumber") String phoneNumber) {
+        return callRecordService.getPeriodCallCountByPhone(startDate, endDate, phoneNumber);
     }
 
     // 번호 별 가장 많은 통화량 또는 통화 횟수 별 정렬 값 반환
