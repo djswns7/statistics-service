@@ -6,6 +6,8 @@ import com.example.statisticsservice.response.CallCountPerDateRes;
 import com.example.statisticsservice.response.CallCountPerMonthRes;
 import com.example.statisticsservice.response.CallCountPerWeekRes;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -24,31 +26,22 @@ public class CallRecordService {
         this.callRecordRepository = callRecordRepository;
     }
 
-    public List<CallTimePerDateRes> getOverallDailyCallTime() {
-        return callRecordRepository.findDailyCallTime().stream()
-                .map(CallTimePerDateRes::new)
-                .collect(Collectors.toList());
+    public Page<CallTimePerDateRes> getOverallDailyCallTime(Pageable pageable) {
+        return callRecordRepository.findDailyCallTime(pageable).map(CallTimePerDateRes::new);
     }
 
-    public List<CallTimePerWeekRes> getOverallWeeklyCallTime() {
-        return callRecordRepository.findWeeklyCallTime().stream()
-                .map(CallTimePerWeekRes::new)
-                .collect(Collectors.toList());
+    public Page<CallTimePerWeekRes> getOverallWeeklyCallTime(Pageable pageable) {
+        return callRecordRepository.findWeeklyCallTime(pageable).map(CallTimePerWeekRes::new);
     }
 
-    public List<CallTimePerMonthRes> getOverallMonthlyCallTime() {
-        return callRecordRepository.findMonthlyCallTime().stream()
-                .map(CallTimePerMonthRes::new)
-                .collect(Collectors.toList());
+    public Page<CallTimePerMonthRes> getOverallMonthlyCallTime(Pageable pageable) {
+        return callRecordRepository.findMonthlyCallTime(pageable).map(CallTimePerMonthRes::new);
     }
 
-    public List<CallTimePerDateRes> getOverallPeriodCallTime(String startDateString, String endDateString) {
-
-        LocalDate startDate = LocalDate.parse(startDateString, DateTimeFormatter.BASIC_ISO_DATE); //20241112
+    public Page<CallTimePerDateRes> getOverallPeriodCallTime(String startDateString, String endDateString, Pageable pageable) {
+        LocalDate startDate = LocalDate.parse(startDateString, DateTimeFormatter.BASIC_ISO_DATE);
         LocalDate endDate = LocalDate.parse(endDateString, DateTimeFormatter.BASIC_ISO_DATE);
-        return callRecordRepository.findPeriodCallTime(startDate, endDate).stream()
-                .map(CallTimePerDateRes::new)
-                .collect(Collectors.toList());
+        return callRecordRepository.findPeriodCallTime(startDate, endDate, pageable).map(CallTimePerDateRes::new);
     }
 
 
@@ -139,7 +132,6 @@ public class CallRecordService {
 
     // 전화번호 필터
     public List<CallTimePerDateRes> getOverallDailyCallTimeByPhone(String phoneNumber) {
-        System.out.println(phoneNumber);
         return callRecordRepository.findDailyCallTimeByPhone(phoneNumber).stream()
                 .map(CallTimePerDateRes::new)
                 .collect(Collectors.toList());
@@ -187,9 +179,9 @@ public class CallRecordService {
                 .collect(Collectors.toList());
     }
 
-    public List<CallCountPerDateRes> getPeriodCallCountByPhone(String startDate, String endDate, String phoneNumber) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
+    public List<CallCountPerDateRes> getPeriodCallCountByPhone(String startDateString, String endDateString, String phoneNumber) {
+        LocalDate start = LocalDate.parse(startDateString, DateTimeFormatter.BASIC_ISO_DATE);
+        LocalDate end = LocalDate.parse(endDateString, DateTimeFormatter.BASIC_ISO_DATE);
         return callRecordRepository.findByPhoneNumberAndCallDateBetween(phoneNumber, start, end)
                 .stream()
                 .map(callRecord -> new CallCountPerDateRes(callRecord.getCallCount(), callRecord.getCallDate()))
