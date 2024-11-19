@@ -2,6 +2,8 @@ package com.example.statisticsservice.repository;
 
 import com.example.statisticsservice.domain.CallRecord;
 import com.example.statisticsservice.response.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -51,78 +53,42 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
             updated_at
         FROM representative
         ORDER BY call_date
-    """, nativeQuery = true)
-    List<CallRecord> findDailyCallTime();
-
-//    @Query(value = """
-//        WITH aggregated AS (
-//            SELECT YEARWEEK(call_date, 1) AS year_week, SUM(call_time) AS total_call_time
-//            FROM call_record
-//            GROUP BY YEARWEEK(call_date, 1)
-//        ),
-//        representative AS (
-//            SELECT c.*, aggregated.total_call_time, aggregated.year_week
-//            FROM call_record c
-//            JOIN aggregated ON YEARWEEK(c.call_date, 1) = aggregated.year_week
-//            WHERE c.id = (
-//                SELECT MIN(sub_c.id)
-//                FROM call_record sub_c
-//                WHERE YEARWEEK(sub_c.call_date, 1) = YEARWEEK(c.call_date, 1)
-//            )
-//        )
-//        SELECT
-//            id,
-//            call_date,
-//            phone_number,
-//            school_name,
-//            office_name,
-//            call_count,
-//            total_call_time AS call_time,
-//            stt_length,
-//            input_tokens,
-//            output_tokens,
-//            created_at,
-//            updated_at,
-//            year_week
-//        FROM representative
-//        ORDER BY year_week
-//    """, nativeQuery = true)
-//    List<CallRecord> findWeeklyCallTime();
+        LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+    """, countQuery = "SELECT COUNT(*) FROM call_record", nativeQuery = true)
+    Page<CallRecord> findDailyCallTime(Pageable pageable);
 
     @Query(value = """
-    WITH aggregated AS (
-        SELECT YEARWEEK(call_date, 1) AS year_week, SUM(call_time) AS total_call_time
-        FROM call_record
-        GROUP BY YEARWEEK(call_date, 1)
-    ),
-    ranked AS (
+        WITH aggregated AS (
+            SELECT YEARWEEK(call_date, 1) AS year_week, SUM(call_time) AS total_call_time
+            FROM call_record
+            GROUP BY YEARWEEK(call_date, 1)
+        ),
+        ranked AS (
+            SELECT
+                c.*, aggregated.total_call_time,
+                ROW_NUMBER() OVER (PARTITION BY YEARWEEK(c.call_date, 1) ORDER BY c.id ASC) AS rn
+            FROM call_record c
+            JOIN aggregated ON YEARWEEK(c.call_date, 1) = aggregated.year_week
+        )
         SELECT
-            c.*,
-            aggregated.total_call_time,
-            ROW_NUMBER() OVER (PARTITION BY YEARWEEK(c.call_date, 1) ORDER BY c.id ASC) AS rn
-        FROM call_record c
-        JOIN aggregated ON YEARWEEK(c.call_date, 1) = aggregated.year_week
-    )
-    SELECT
-        id,
-        call_date,
-        phone_number,
-        school_name,
-        office_name,
-        call_count,
-        total_call_time AS call_time,
-        stt_length,
-        input_tokens,
-        output_tokens,
-        created_at,
-        updated_at
-    FROM ranked
-    WHERE rn = 1
-    ORDER BY call_date;
-""", nativeQuery = true)
-    List<CallRecord> findWeeklyCallTime();
-
-
+            id,
+            call_date,
+            phone_number,
+            school_name,
+            office_name,
+            call_count,
+            total_call_time AS call_time,
+            stt_length,
+            input_tokens,
+            output_tokens,
+            created_at,
+            updated_at
+        FROM ranked
+        WHERE rn = 1
+        ORDER BY call_date
+        LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+    """, countQuery = "SELECT COUNT(*) FROM call_record", nativeQuery = true)
+    Page<CallRecord> findWeeklyCallTime(Pageable pageable);
 
     @Query(value = """
         WITH aggregated AS (
@@ -132,8 +98,7 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
         ),
         ranked AS (
             SELECT
-                c.*,
-                aggregated.total_call_time,
+                c.*, aggregated.total_call_time,
                 ROW_NUMBER() OVER (PARTITION BY DATE_FORMAT(c.call_date, '%Y-%m') ORDER BY c.id ASC) AS rn
             FROM call_record c
             JOIN aggregated ON DATE_FORMAT(c.call_date, '%Y-%m') = aggregated.month
@@ -153,9 +118,10 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
             updated_at
         FROM ranked
         WHERE rn = 1
-        ORDER BY call_date;
-    """, nativeQuery = true)
-    List<CallRecord> findMonthlyCallTime();
+        ORDER BY call_date
+        LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+    """, countQuery = "SELECT COUNT(*) FROM call_record", nativeQuery = true)
+    Page<CallRecord> findMonthlyCallTime(Pageable pageable);
 
     @Query(value = """
         WITH aggregated AS (
@@ -189,8 +155,9 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
             updated_at
         FROM representative
         ORDER BY call_date
-    """, nativeQuery = true)
-    List<CallRecord> findPeriodCallTime(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+        LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+    """, countQuery = "SELECT COUNT(*) FROM call_record WHERE call_date BETWEEN :startDate AND :endDate", nativeQuery = true)
+    Page<CallRecord> findPeriodCallTime(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, Pageable pageable);
 
     // call_count 조회용 쿼리
 
@@ -578,7 +545,7 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
 
 
     // 일별 집계 쿼리
-    @Query("SELECT COUNT(c) as callCount, c.callDate as callDate " +
+    @Query("SELECT SUM(c.callCount) as callCount, c.callDate as callDate " +
             "FROM CallRecord c " +
             "WHERE c.schoolName = :schoolName " +
             "GROUP BY c.callDate " +
@@ -586,7 +553,7 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
     List<CallCountPerDateProjection> findDailyCallCountBySchool(@Param("schoolName") String schoolName);
 
     // 주별 집계 쿼리
-    @Query("SELECT COUNT(c) as callCount, FUNCTION('WEEK', c.callDate) as week " +
+    @Query("SELECT SUM(c.callCount) as callCount, FUNCTION('WEEK', c.callDate) as week " +
             "FROM CallRecord c " +
             "WHERE c.schoolName = :schoolName " +
             "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate) " +
@@ -594,7 +561,7 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
     List<CallCountPerWeekProjection> findWeeklyCallCountBySchool(@Param("schoolName") String schoolName);
 
     // 월별 집계 쿼리
-    @Query("SELECT COUNT(c) as callCount, FUNCTION('MONTH', c.callDate) as month " +
+    @Query("SELECT SUM(c.callCount) as callCount, FUNCTION('MONTH', c.callDate) as month " +
             "FROM CallRecord c " +
             "WHERE c.schoolName = :schoolName " +
             "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('MONTH', c.callDate) " +
@@ -602,7 +569,7 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
     List<CallCountPerMonthProjection> findMonthlyCallCountBySchool(@Param("schoolName") String schoolName);
 
     // 전화번호 기반 일별 집계 쿼리
-    @Query("SELECT COUNT(c) as callCount, c.callDate as callDate " +
+    @Query("SELECT SUM(c.callCount) as callCount, c.callDate as callDate " +
             "FROM CallRecord c " +
             "WHERE c.phoneNumber = :phoneNumber " +
             "GROUP BY c.callDate " +
@@ -610,15 +577,17 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
     List<CallCountPerDateProjection> findDailyCallCountByPhone(@Param("phoneNumber") String phoneNumber);
 
     // 전화번호 기반 주별 집계 쿼리
-    @Query("SELECT COUNT(c) as callCount, FUNCTION('WEEK', c.callDate) as week " +
+    @Query("SELECT SUM(c.callCount) as callCount, FUNCTION('WEEK', c.callDate) as week " +
             "FROM CallRecord c " +
             "WHERE c.phoneNumber = :phoneNumber " +
             "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate) " +
             "ORDER BY FUNCTION('YEAR', c.callDate), FUNCTION('WEEK', c.callDate)")
     List<CallCountPerWeekProjection> findWeeklyCallCountByPhone(@Param("phoneNumber") String phoneNumber);
 
+
+
     // 전화번호 기반 월별 집계 쿼리
-    @Query("SELECT COUNT(c) as callCount, FUNCTION('MONTH', c.callDate) as month " +
+    @Query("SELECT SUM(c.callCount) as callCount, FUNCTION('MONTH', c.callDate) as month " +
             "FROM CallRecord c " +
             "WHERE c.phoneNumber = :phoneNumber " +
             "GROUP BY FUNCTION('YEAR', c.callDate), FUNCTION('MONTH', c.callDate) " +
@@ -633,13 +602,13 @@ public interface CallRecordRepository extends JpaRepository<CallRecord, Long> {
     @Query("SELECT SUM(c.callTime) as callTime, c.schoolName as schoolName FROM CallRecord c GROUP BY c.schoolName")
     List<CallTimePerSchoolRes> findCallTimeBySchool(Sort sort);
 
-    @Query("SELECT COUNT(c) as callCount, c.schoolName as schoolName FROM CallRecord c GROUP BY c.schoolName")
+    @Query("SELECT SUM(c.callCount) as callCount, c.schoolName as schoolName FROM CallRecord c GROUP BY c.schoolName")
     List<CallCountPerSchoolRes> findCallCountBySchool(Sort sort);
 
     @Query("SELECT SUM(c.callTime) as callTime, c.phoneNumber as phoneNum FROM CallRecord c GROUP BY c.phoneNumber")
     List<CallTimePerPhoneNumRes> findCallTimeByPhoneNum(Sort sort);
 
-    @Query("SELECT COUNT(c) as callCount, c.phoneNumber as phoneNum FROM CallRecord c GROUP BY c.phoneNumber")
+    @Query("SELECT SUM(c.callCount) as callCount, c.phoneNumber as phoneNum FROM CallRecord c GROUP BY c.phoneNumber")
     List<CallCountPerPhoneNumRes> findCallCountByPhoneNum(Sort sort);
 
 }
