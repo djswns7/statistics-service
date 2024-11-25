@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
 import java.io.OutputStream;
+import java.time.LocalDateTime;
 
 @Service
 public class OTPService {
@@ -26,32 +27,33 @@ public class OTPService {
     /**
      * 새로운 UserOTP 생성
      *
-     * @param accountName 사용자 계정 이름
-     * @param secreteKey  사용자 시크릿 키
+     * @param email      사용자 이메일
+     * @param secreteKey 사용자 시크릿 키
+     * @param expiry     OTP 만료 시간
      */
     @Transactional
-    public void createOTP(String accountName, String secreteKey) {
-        otpRepository.createUserOTP(accountName, secreteKey);
+    public void createOTP(String email, String secreteKey, LocalDateTime expiry) {
+        otpRepository.createUserOTP(email, secreteKey, expiry);
     }
 
     /**
-     * accountName에 해당하는 secreteKey 조회
+     * email에 해당하는 secreteKey 조회
      *
-     * @param accountName 사용자 계정 이름
+     * @param email 사용자 이메일
      * @return secreteKey 값
      */
-    public String getSecreteKey(String accountName) {
-        return otpRepository.findSecreteKeyByAccountName(accountName);
+    public String getSecreteKey(String email) {
+        return otpRepository.findSecreteKeyByEmail(email);
     }
 
     /**
-     * accountName에 해당하는 UserOTP 삭제
+     * email에 해당하는 UserOTP 삭제
      *
-     * @param accountName 삭제할 사용자 계정 이름
+     * @param email 삭제할 사용자 이메일
      */
     @Transactional
-    public void deleteOTP(String accountName) {
-        otpRepository.deleteByAccountName(accountName);
+    public void deleteOTP(String email) {
+        otpRepository.deleteByEmail(email);
     }
 
     /**
@@ -60,26 +62,48 @@ public class OTPService {
      * @return 생성된 Secret Key
      */
     public String generateSecretKey() {
-//        1. Secret Key 생성
+        // Secret Key 생성 (저장 아님!)
         GoogleAuthenticatorKey key = gAuth.createCredentials();
         return key.getKey();
     }
 
     /**
+     * 동일 email에 대한 Secret Key 중복 여부를 확인 후
+     * 존재하는 값 또는 생성한 값을 리턴
+     *
+     * @param email 사용자 이메일
+     * @return 생성 또는 불러온 Secret Key
+     */
+    @Transactional
+    public String findOrCreateSecretKey(String email) {
+        String existingSecretKey = otpRepository.findSecreteKeyByEmail(email);
+
+        if (existingSecretKey != null) {
+            return existingSecretKey;
+        }
+
+        // Secret Key 생성 및 저장
+        String newSecretKey = generateSecretKey();
+
+        // TODO
+        // 현재 만료된 OTP에 대한 제거 로직은 없음
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(10); // OTP 만료 시간 10분 후
+        createOTP(email, newSecretKey, expiry);
+
+        return newSecretKey;
+    }
+
+    /**
      * QR Content 생성
      *
-     * @param accountName 사용자 계정 이름
-     * @param secretKey   생성된 Secret Key
-     * @param issuerName  발급 서비스 이름
+     * @param email      사용자 이메일
+     * @param secretKey  생성된 Secret Key
+     * @param issuerName 발급 서비스 이름
      * @return QR 코드 내용
      */
-    public String createQRContent(String accountName, String secretKey, String issuerName) {
-        // 2. QR Code 내용 생성(아래 형태)
-        // otpauth://totp/{accountName}?secret={secretKey}&issuer={issuerName}
-        // accountName = 구글계정
-        // secreteKey = 내가 임의로 정한 스트링 값
-        // issuerName 보통 프로젝트이름
-        return String.format("otpauth://totp/%s?secret=%s&issuer=%s", accountName, secretKey, issuerName);
+    public String createQRContent(String email, String secretKey, String issuerName) {
+        // QR Code 내용 생성
+        return String.format("otpauth://totp/%s?secret=%s&issuer=%s", email, secretKey, issuerName);
     }
 
     /**
@@ -93,5 +117,24 @@ public class OTPService {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 300, 300);
         MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream, new MatrixToImageConfig());
+    }
+
+    /**
+     * 사용자 코드 검증
+     *
+     * @param email 사용자 이메일
+     * @param code  사용자 입력 2차 인증 코드
+     * @return 코드 유효 여부
+     */
+    public boolean verifyCode(String email, int code) {
+        // email에 해당하는 Secret Key 조회
+        String secretKey = otpRepository.findSecreteKeyByEmail(email);
+
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalArgumentException("Invalid email: Secret Key not found");
+        }
+
+        // Google Authenticator의 코드 검증
+        return gAuth.authorize(secretKey, code);
     }
 }

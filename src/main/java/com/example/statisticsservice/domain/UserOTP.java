@@ -1,44 +1,54 @@
 package com.example.statisticsservice.domain;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="user_OPT", indexes = {
-        @Index(name = "idx_account_name", columnList = "accountName")
-})
+@Table(name = "user_OTP")
 public class UserOTP {
-    // id 자동생성이 아니므로 항상 직접 아이디 입력 필요
-    @Id
-    @Column(name = "account_name", nullable = false, length = 100)
-    private String accountName;
 
-    @Column(name = "secrete_key", nullable = false, length = 500)
+    // User 테이블의 email을 외래 키로 참조
+    @Id
+    @Column(name = "email", nullable = false, length = 255)
+    private String email;
+
+    @Column(name = "secrete_key", nullable = false, length = 500) // OTP 시크릿 키 저장
     private String secreteKey;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "otp_expiry", nullable = false) // OTP 만료 시간
+    private LocalDateTime otpExpiry;
+
+    @Column(name = "created_at", nullable = false, updatable = false) // 생성 시간
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false) // 수정 시간
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    public UserOTP(){}
+    @MapsId // email은 User 테이블의 email을 참조
+    @OneToOne(cascade = CascadeType.ALL) // Cascade 설정 추가
+    @JoinColumn(name = "email", referencedColumnName = "email", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_user_email"))
+    private User user;
 
-    // accountName 값을 생성 시 반드시 받아야 하므로 생성자 추가
-    public UserOTP(String accountName, String secreteKey) {
-        this.accountName = accountName;
+    public UserOTP() {}
+
+    // 생성자: email과 secretKey, otpExpiry 필수
+    public UserOTP(User user, String secreteKey, LocalDateTime otpExpiry) {
+        this.email = user.getEmail();
+        this.user = user;
         this.secreteKey = secreteKey;
+        this.otpExpiry = otpExpiry;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-    public String getAccountName() {
-        return accountName;
+    // Getters and Setters
+    public String getEmail() {
+        return email;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getSecreteKey() {
@@ -49,12 +59,16 @@ public class UserOTP {
         this.secreteKey = secreteKey;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public LocalDateTime getOtpExpiry() {
+        return otpExpiry;
     }
 
-    public void setCreatedAt() {
-        this.createdAt = LocalDateTime.now();
+    public void setOtpExpiry(LocalDateTime otpExpiry) {
+        this.otpExpiry = otpExpiry;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public LocalDateTime getUpdatedAt() {
@@ -62,6 +76,6 @@ public class UserOTP {
     }
 
     public void setUpdatedAt() {
-        this.updatedAt = LocalDateTime.now();;
+        this.updatedAt = LocalDateTime.now();
     }
 }
