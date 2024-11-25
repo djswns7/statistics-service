@@ -1,6 +1,8 @@
 package com.example.statisticsservice.service;
 
+import com.example.statisticsservice.domain.User;
 import com.example.statisticsservice.repository.OTPRepository;
+import com.example.statisticsservice.repository.UserRepository;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageConfig;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -13,15 +15,18 @@ import jakarta.transaction.Transactional;
 
 import java.io.OutputStream;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class OTPService {
     private final OTPRepository otpRepository;
     private final GoogleAuthenticator gAuth;
+    private final UserRepository userRepository;
 
-    public OTPService(OTPRepository otpRepository, GoogleAuthenticator gAuth) {
+    public OTPService(OTPRepository otpRepository, GoogleAuthenticator gAuth, UserRepository userRepository) {
         this.otpRepository = otpRepository;
         this.gAuth = gAuth;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -76,6 +81,14 @@ public class OTPService {
      */
     @Transactional
     public String findOrCreateSecretKey(String email) {
+        // user 테이블에서 이메일 확인
+        Optional<User> user = userRepository.findByEmail(email);
+
+        // 사용자가 존재하지 않을 경우 예외를 던짐
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("생성되지 않은 유저에 대한 QR 코드 생성 요청입니다: " + email);
+        }
+
         String existingSecretKey = otpRepository.findSecreteKeyByEmail(email);
 
         if (existingSecretKey != null) {

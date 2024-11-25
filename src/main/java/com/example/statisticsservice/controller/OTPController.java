@@ -2,6 +2,7 @@ package com.example.statisticsservice.controller;
 
 import com.example.statisticsservice.service.OTPService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +13,11 @@ import java.io.OutputStream;
 @RequestMapping("/otp")
 public class OTPController {
     private final OTPService otpService;
+    private final HttpSession httpSession;
 
-    public OTPController(OTPService otpService) {
+    public OTPController(OTPService otpService, HttpSession httpSession) {
         this.otpService = otpService;
+        this.httpSession = httpSession;
     }
 
     //
@@ -51,16 +54,17 @@ public class OTPController {
         }
     }
 
-    // TODO
-    // 세션에서 email 을 유지할 경우 RequestParam 으로 email 을 전달받지 않는 형태도 구현하면 좋겠음
-    //
-    // 구현하고자 하는 유저 플로우: 1. 이메일을 통한 로그인 -> 2. OTP 코드 입력
-    // 1. 이메일을 세션에 저장 ( 로그인 핸들러: 요청인자로 이메일과 비밀번호 )
-    // 2. 세션에 저장된 이메일과 코드를 보고 인가 결정 ( verifyQRCode 핸들러: 요청인자로 otp 코드 하나만 )
-    @GetMapping("/qr-codes/verify")
+    /**
+     *TODO
+     *세션에서 email 을 유지할 경우 RequestParam 으로 email 을 전달받지 않는 형태도 구현하면 좋겠음
+     *구현하고자 하는 유저 플로우: 1. 이메일을 통한 로그인 -> 2. OTP 코드 입력
+     *1. 이메일을 세션에 저장 ( 로그인 핸들러: 요청인자로 이메일과 비밀번호 )
+     *2. 세션에 저장된 이메일과 코드를 보고 인가 결정 ( verify 핸들러: 요청인자로 otp 코드 하나만 )
+        */
+    @GetMapping("/qr-codes/verify-with-email")
     public ResponseEntity<String> verifyQRCode(
-            @RequestParam String email,
-            @RequestParam int code
+            @RequestParam(name = "email") String email,
+            @RequestParam(name = "code") int code
     ) {
         try {
             boolean isValid = otpService.verifyCode(email, code);
@@ -77,5 +81,34 @@ public class OTPController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while verifying the code.");
         }
     }
+
+    // TODO
+    // Post로 변경
+    @GetMapping("/qr-codes/verify")
+    public ResponseEntity<String> verify(@RequestParam int code) {
+        try {
+            // 세션에서 이메일 가져오기
+            String email = (String) httpSession.getAttribute("email");
+
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("세션에 이메일 정보가 없습니다. 로그인 필요");
+            }
+
+            // OTP 코드 검증
+            boolean isValid = otpService.verifyCode(email, code);
+
+            if (isValid) {
+                return ResponseEntity.ok("OTP 인증 성공.");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효한 코드가 아닙니다. OTP 인증 실패");
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while verifying the code.");
+        }
+    }
+
 
 }
